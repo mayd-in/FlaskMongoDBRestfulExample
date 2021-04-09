@@ -173,3 +173,7 @@ curl -i -H "Content-Type: application/json" -X POST \
   -d '{"name": "New Board", "status": "active"}' \
   http://localhost:3000/boards/
 ```
+
+# License
+
+This application is licensed under the GNU GPLv3 License. See LICENSE file for more details
