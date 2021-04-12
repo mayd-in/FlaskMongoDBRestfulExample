@@ -1,10 +1,12 @@
 from flask import Blueprint, request, Response
 from flask.views import MethodView
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from marshmallow.exceptions import ValidationError
+from mongoengine.errors import OperationError
 
 from server import db, ma
 from server.database.models import User, Card, Comment
-from server.database.schemas import CardSchema
+from server.database.schemas import CardSchema, CommentSchema
 
 
 class CardsAPI(MethodView):
@@ -14,39 +16,32 @@ class CardsAPI(MethodView):
         return Response(resp, mimetype="application/json", status=200)
 
     @jwt_required()
-    def post(self, card_id):
-        user_id = get_jwt_identity()
-        user = User.objects.get(id=user_id)
-
-        data = request.get_json(force=True)
-
-        card = Card.objects.get_or_404(id=card_id, owner=user)
-        comment = Comment(**data, sender=user)
-        card.update(push__content=comment)
-        card.save()
-        return {'status': 'success'}, 200
-
-    @jwt_required()
     def put(self, card_id):
-        user_id = get_jwt_identity()
-        user = User.objects.get(id=user_id)
-        card = Card.objects.get_or_404(id=card_id, owner=user)
+        try:
+            user_id = get_jwt_identity()
+            user = User.objects.get(id=user_id)
+            card = Card.objects.get_or_404(id=card_id, owner=user)
 
-        data = request.get_json(force=True)
-        card.update(**data)
-        card.save()
-        return {'status': 'success'}, 200
+            data = request.get_json(force=True)
+            data = CardSchema().load(data, partial=True)
+            card.update(**data)
+            card.save()
+            return data, 200
+        except ValidationError as e:
+            return {'errors': e.messages}, 400
 
     @jwt_required()
     def delete(self, card_id):
-        user_id = get_jwt_identity()
-        user = User.objects.get(id=user_id)
-        card = Card.objects.get_or_404(id=card_id, owner=user)
-        card.delete()
-        return {'status': 'success'}, 200
+        try:
+            user_id = get_jwt_identity()
+            user = User.objects.get(id=user_id)
+            card = Card.objects.get_or_404(id=card_id, owner=user)
+            card.delete()
+            return {'status': 'success'}, 200
+        except OperationError as e:
+            return {'errors': 'Operational error'}, 400
 
 cards_view = CardsAPI.as_view('cards')
 
 blueprint = Blueprint("cards", __name__, url_prefix="/cards")
-blueprint.add_url_rule('/<string:card_id>/comments/', view_func=cards_view, methods=['POST'])
 blueprint.add_url_rule('/<string:card_id>', view_func=cards_view, methods=['GET', 'PUT', 'DELETE'])

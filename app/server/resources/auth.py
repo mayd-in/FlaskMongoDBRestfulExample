@@ -3,18 +3,25 @@ from datetime import timedelta
 from flask import Blueprint, request
 from flask.views import MethodView
 from flask_jwt_extended import create_access_token
+from marshmallow.exceptions import ValidationError
 from mongoengine.errors import FieldDoesNotExist, NotUniqueError, DoesNotExist
 
 from server.database.models import User
+from server.database.schemas import UserSchema
+
 
 class RegisterAPI(MethodView):
     def post(self):
         try:
-            body = request.get_json()
-            user = User(**body)
+            data = request.get_json()
+
+            result = UserSchema().load(data)
+            user = User(**result)
             user.hash_password()
             user.save()
-            return {'id': str(user.id)}, 200
+            return UserSchema().dump(user), 200
+        except ValidationError as e:
+            return {'errors': e.messages}, 400
         except FieldDoesNotExist:
             return {'error': 'Request is missing required fields'}, 400
         except NotUniqueError:
@@ -23,9 +30,9 @@ class RegisterAPI(MethodView):
 class LoginAPI(MethodView):
     def post(self):
         try:
-            body = request.get_json()
-            user = User.objects.get(email=body.get('email'))
-            authorized = user.check_password(body.get('password'))
+            data = request.get_json()
+            user = User.objects.get(email=data.get('email'))
+            authorized = user.check_password(data.get('password'))
             if not authorized:
                 return {'error': 'Email or password invalid'}, 401
 
