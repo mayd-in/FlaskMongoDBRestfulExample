@@ -5,7 +5,29 @@ This repository contains the example code for API project, using MongoEngine, Ma
 User account has to be created to use application. Only registered users can add boards, cards and comments.
 Entities may be deleted by owners only.
 
-# API
+## Project Structure
+
+### Application Structure
+```
+app/
+├── requirements.txt
+├── wsgi.py
+├── Dockerfile
+└── server
+    ├── __init__.py
+    ├── database
+    │   ├── __init__.py
+    │   ├── models.py
+    │   └── schemas.py
+    └── resources
+        ├── __init__.py
+        ├── auth.py
+        ├── boards.py
+        ├── cards.py
+        └── comments.py
+```
+
+## API
 
 <table>
   <tr>
@@ -30,7 +52,7 @@ Entities may be deleted by owners only.
   </tr>
 </table>
 
-## Boards
+### Boards
 
 <table>
   <tr>
@@ -70,7 +92,7 @@ Entities may be deleted by owners only.
   </tr>
 </table>
 
-## Cards
+### Cards
 
 <table>
   <tr>
@@ -93,14 +115,10 @@ Entities may be deleted by owners only.
     <td>/cards/{card_id}</td>
     <td>Delete a card by ID</td>
   </tr>
-  <tr>
-    <td>POST</td>
-    <td>/cards/{card_id}/comments/</td>
-    <td>Add a new comment to card</td>
-  </tr>
+
 </table>
 
-## Comments
+### Comments
 
 <table>
   <tr>
@@ -110,22 +128,60 @@ Entities may be deleted by owners only.
   </tr>
   <tr>
     <td>GET</td>
-    <td>/comments/{comment_id}</td>
+    <td>/cards/{card_id}/comments/</td>
+    <td>List of comments of card</td>
+  </tr>
+  <tr>
+    <td>GET</td>
+    <td>/cards/{card_id}/comments/{comment_id}</td>
     <td>Get comment details by ID</td>
+  </tr>
+    <tr>
+    <td>POST</td>
+    <td>/cards/{card_id}/comments/</td>
+    <td>Add a new comment to card</td>
   </tr>
   <tr>
     <td>PUT</td>
-    <td>/comments/{comment_id}</td>
+    <td>/cards/{card_id}/comments/{comment_id}</td>
     <td>Update comment details by ID</td>
   </tr>
   <tr>
     <td>DELETE</td>
-    <td>/comments/{comment_id}</td>
+    <td>/cards/{card_id}/comments/{comment_id}</td>
     <td>Delete a comment by ID</td>
   </tr>
 </table>
 
-# Setup
+## Schemas
+
+#### User
+- id *(read only)*
+- email
+- password
+#### Board
+- id *(read only)*
+- name
+- status *(one of: active, archived)*
+- owner *(read only)*
+- date_created *(read only)*
+#### Card
+- id *(read only)*
+- title
+- content
+- start_date
+- end_date
+- date_created *(read only)*
+- date_completed
+- owner *(read only)*
+- assigned
+#### Comment
+- id *(read only)*
+- text
+- sender
+- date_created *(read only)*
+
+## Setup
 
 1. Install `docker` and `docker-compose`
 2. Clone repository
@@ -146,11 +202,11 @@ Entities may be deleted by owners only.
     7. Exit the container by typing `exit`
 5. Go to `http://localhost:3000` and check if it is working.
 
-# Examples
+## Examples
 
 ### Register and Login
 Save Bearer token after login
-```
+```bash
 curl -i -H "Content-Type: application/json" -X POST \
   -d '{"email": "john.doe@example.com", "password": "strongpassword"}' \
   http://localhost:3000/auth/register
@@ -161,19 +217,19 @@ curl -i -H "Content-Type: application/json" -X POST \
 ```
 
 ### Get list of boards
-```
+```bash
 curl -X GET http://localhost:3000/boards/
 ```
 
 ### Add a board
 Use Bearer token given after login
-```
+```bash
 curl -i -H "Content-Type: application/json" -X POST \
   -H "Authorization: Bearer {token}" \
   -d '{"name": "New Board", "status": "active"}' \
   http://localhost:3000/boards/
 ```
 
-# License
+## License
 
 This application is licensed under the GNU GPLv3 License. See LICENSE file for more details
